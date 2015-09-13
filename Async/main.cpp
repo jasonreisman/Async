@@ -22,6 +22,14 @@ void setupQueues()
 
 void testBasicTasks()
 {
+    int x = 0;
+    Async::Task<void> f_void(Test::TestQueue1, [&x]() {
+        x++;
+    });
+    
+    f_void.get();
+    assert(x == 1);
+    
     Async::Task<int> f_int(Test::TestQueue1, []() {
         return 444;
     });
@@ -46,6 +54,14 @@ void testBasicTasks()
 
 void testCreateTask()
 {
+    int x = 0;
+    Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
+        x++;
+    });
+    
+    f_void.get();
+    assert(x == 1);
+    
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
     });
@@ -70,6 +86,16 @@ void testCreateTask()
 
 void testContinuationTasks()
 {
+    int x = 0;
+    Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
+        x++;
+    }).then([&x]() {
+        x += 2;
+    });
+    
+    f_void.get();
+    assert(x == 3);
+    
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
     }).then([](int x) {
@@ -100,6 +126,61 @@ void testContinuationTasks()
     assert(y_str == "dlroW olleH");
 }
 
+void testContinuationTasksAfterGet()
+{
+    int x = 0;
+    Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
+        x++;
+    });
+    f_void.get();
+    
+    Async::Task<void> f_void2 = f_void.then([&x]() {
+        x += 2;
+    });
+    
+    f_void2.get();
+    assert(x == 3);
+    
+    Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
+        return 444;
+    });
+    f_int.get();
+    
+    Async::Task<int> f_int2 = f_int.then([](int x) {
+        return 2*x + 1;
+    });
+    
+    int y_int2 = f_int2.get();
+    assert(y_int2 == 889);
+    
+    Async::Task<double> f_double = Async::CreateTask(Test::TestQueue1, []() {
+        return M_PI;
+    });
+    f_double.get();
+
+    Async::Task<double> f_double2 = f_double.then([](double x) {
+        return 2*x + 1;
+    });
+    
+    double y_double2 = f_double2.get();
+    assert(fabs(y_double2 - (2*M_PI + 1)) < 1e-8);
+
+    
+    Async::Task<std::string> f_str = Async::CreateTask(Test::TestQueue1, []() -> std::string {
+        return "Hello World";
+    });
+    f_str.get();
+    
+    Async::Task<std::string> f_str2 = f_str.then([](const std::string& s) {
+        std::string rev = s;
+        std::reverse(rev.begin(), rev.end());
+        return rev;
+    });
+    
+    std::string y_str2 = f_str2.get();
+    assert(y_str2 == "dlroW olleH");
+}
+
 
 int main(int argc, const char* argv[])
 {
@@ -108,6 +189,7 @@ int main(int argc, const char* argv[])
     testBasicTasks();
     testCreateTask();
     testContinuationTasks();
+    testContinuationTasksAfterGet();
     
     return 0;
 }
