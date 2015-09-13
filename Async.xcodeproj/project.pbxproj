@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		961FF1131BA5AE9A009CE21B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 961FF1121BA5AE9A009CE21B /* main.cpp */; };
+		961FF11C1BA5AFAB009CE21B /* Queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 961FF11B1BA5AFAB009CE21B /* Queue.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,9 @@
 /* Begin PBXFileReference section */
 		961FF10F1BA5AE9A009CE21B /* Async */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Async; sourceTree = BUILT_PRODUCTS_DIR; };
 		961FF1121BA5AE9A009CE21B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		961FF1191BA5AF1C009CE21B /* Async */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Async; sourceTree = "<group>"; };
+		961FF11A1BA5AF1C009CE21B /* Util */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Util; sourceTree = "<group>"; };
+		961FF11B1BA5AFAB009CE21B /* Queue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Queue.cpp; path = Async/Async/Queue.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +45,7 @@
 		961FF1061BA5AE9A009CE21B = {
 			isa = PBXGroup;
 			children = (
+				961FF11B1BA5AFAB009CE21B /* Queue.cpp */,
 				961FF1111BA5AE9A009CE21B /* Async */,
 				961FF1101BA5AE9A009CE21B /* Products */,
 			);
@@ -57,6 +62,8 @@
 		961FF1111BA5AE9A009CE21B /* Async */ = {
 			isa = PBXGroup;
 			children = (
+				961FF1191BA5AF1C009CE21B /* Async */,
+				961FF11A1BA5AF1C009CE21B /* Util */,
 				961FF1121BA5AE9A009CE21B /* main.cpp */,
 			);
 			path = Async;
@@ -119,6 +126,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				961FF1131BA5AE9A009CE21B /* main.cpp in Sources */,
+				961FF11C1BA5AFAB009CE21B /* Queue.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -206,6 +214,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/Async";
 			};
 			name = Debug;
 		};
@@ -213,6 +222,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/Async";
 			};
 			name = Release;
 		};
