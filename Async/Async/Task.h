@@ -61,7 +61,7 @@ public:
     template <typename Func>
     auto then(const Func& f) -> Task<decltype(f(*reinterpret_cast<T*>(0)))>
     {
-        uint32_t queueId = m_work->getJobId() >> 32;
+        uint32_t queueId = m_work->getQueueId();
         return then(queueId, f);
     }
     
@@ -85,7 +85,7 @@ public:
     template <typename Func>
     auto then(const Func& f) -> Task<decltype(f())>
     {
-        uint32_t queueId = m_work->jobId >> 32;
+        uint32_t queueId = m_work->getQueueId();
         return then(queueId, f);
     }
     
@@ -94,7 +94,7 @@ public:
     {
         typedef Task<decltype(f())> NextTask;
         
-        std::shared_future<T> futCopy = m_work->fut;
+        std::shared_future<T> futCopy = m_work->getFuture();
         auto g = [futCopy, f]()
         {
             futCopy.get();
@@ -186,6 +186,11 @@ private:
         uint64_t getJobId() const
         {
             return m_jobId;
+        }
+        
+        uint32_t getQueueId() const
+        {
+            return m_jobId >> 32;
         }
         
         std::shared_future<T>& getFuture()
