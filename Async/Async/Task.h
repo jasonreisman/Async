@@ -294,9 +294,9 @@ void Task<void>::Work::createWorkFunc(const F& f)
 }
 
 template <typename Func>
-auto CreateTask(const Func& f) -> Task<decltype(f())>
+auto CreateTask(uint32_t queueId, const Func& f) -> Task<decltype(f())>
 {
-    return Task<decltype(f())>(f);
+    return Task<decltype(f())>(queueId, f);
 }
 
 ASYNC_END
