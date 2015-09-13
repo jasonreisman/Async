@@ -19,7 +19,7 @@ public:
     {
     }
     
-    State getCurrentState()
+    State getCurrentState() const
     {
         return m_current;
     }
