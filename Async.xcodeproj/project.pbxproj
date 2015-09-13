@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		961FF1131BA5AE9A009CE21B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 961FF1121BA5AE9A009CE21B /* main.cpp */; };
-		961FF11C1BA5AFAB009CE21B /* Queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 961FF11B1BA5AFAB009CE21B /* Queue.cpp */; };
+		961FF13A1BA5B27A009CE21B /* Queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 961FF1341BA5B27A009CE21B /* Queue.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,9 +26,12 @@
 /* Begin PBXFileReference section */
 		961FF10F1BA5AE9A009CE21B /* Async */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Async; sourceTree = BUILT_PRODUCTS_DIR; };
 		961FF1121BA5AE9A009CE21B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		961FF1191BA5AF1C009CE21B /* Async */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Async; sourceTree = "<group>"; };
-		961FF11A1BA5AF1C009CE21B /* Util */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Util; sourceTree = "<group>"; };
-		961FF11B1BA5AFAB009CE21B /* Queue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Queue.cpp; path = Async/Async/Queue.cpp; sourceTree = "<group>"; };
+		961FF1331BA5B27A009CE21B /* Base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Base.h; sourceTree = "<group>"; };
+		961FF1341BA5B27A009CE21B /* Queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Queue.cpp; sourceTree = "<group>"; };
+		961FF1351BA5B27A009CE21B /* Queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Queue.h; sourceTree = "<group>"; };
+		961FF1361BA5B27A009CE21B /* Task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Task.h; sourceTree = "<group>"; };
+		961FF1381BA5B27A009CE21B /* Base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Base.h; sourceTree = "<group>"; };
+		961FF1391BA5B27A009CE21B /* StateMachineT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StateMachineT.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,7 +48,6 @@
 		961FF1061BA5AE9A009CE21B = {
 			isa = PBXGroup;
 			children = (
-				961FF11B1BA5AFAB009CE21B /* Queue.cpp */,
 				961FF1111BA5AE9A009CE21B /* Async */,
 				961FF1101BA5AE9A009CE21B /* Products */,
 			);
@@ -62,11 +64,31 @@
 		961FF1111BA5AE9A009CE21B /* Async */ = {
 			isa = PBXGroup;
 			children = (
-				961FF1191BA5AF1C009CE21B /* Async */,
-				961FF11A1BA5AF1C009CE21B /* Util */,
+				961FF1321BA5B27A009CE21B /* Async */,
+				961FF1371BA5B27A009CE21B /* Util */,
 				961FF1121BA5AE9A009CE21B /* main.cpp */,
 			);
 			path = Async;
+			sourceTree = "<group>";
+		};
+		961FF1321BA5B27A009CE21B /* Async */ = {
+			isa = PBXGroup;
+			children = (
+				961FF1331BA5B27A009CE21B /* Base.h */,
+				961FF1341BA5B27A009CE21B /* Queue.cpp */,
+				961FF1351BA5B27A009CE21B /* Queue.h */,
+				961FF1361BA5B27A009CE21B /* Task.h */,
+			);
+			path = Async;
+			sourceTree = "<group>";
+		};
+		961FF1371BA5B27A009CE21B /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				961FF1381BA5B27A009CE21B /* Base.h */,
+				961FF1391BA5B27A009CE21B /* StateMachineT.h */,
+			);
+			path = Util;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -126,7 +148,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				961FF1131BA5AE9A009CE21B /* main.cpp in Sources */,
-				961FF11C1BA5AFAB009CE21B /* Queue.cpp in Sources */,
+				961FF13A1BA5B27A009CE21B /* Queue.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
