@@ -1,15 +1,6 @@
 #include "Async/Task.h"
-#include "Util/StateMachineT.h"
 
-#include <cassert>
-#include <cmath>
-#include <deque>
-#include <functional>
-#include <future>
-#include <map>
 #include <iostream>
-#include <thread>
-#include <vector>
 
 namespace Test
 {
