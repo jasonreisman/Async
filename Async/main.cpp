@@ -181,6 +181,60 @@ void testContinuationTasksAfterGet()
     assert(y_str2 == "dlroW olleH");
 }
 
+void testWhenAny()
+{
+    int count = 0;
+    
+    Async::Task<void> t0 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(3));
+        count++;
+    });
+
+    Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(2));
+        count++;
+    });
+
+    Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        count++;
+    });
+    
+    std::vector<Async::Task<void>> tasks = {t0, t1, t2};
+    Async::Task<std::vector<Async::Task<void>>> anyTask = Async::WhenAny(Test::TestQueue2, tasks.begin(), tasks.end());
+    std::vector<Async::Task<void>> completed = anyTask.get();
+
+    assert(completed.size() > 0);
+    assert(count > 0);
+}
+
+void testWhenAll()
+{
+    int count = 0;
+    
+    Async::Task<void> t0 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(3));
+        count++;
+    });
+    
+    Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(2));
+        count++;
+    });
+    
+    Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        count++;
+    });
+    
+    std::vector<Async::Task<void>> tasks = {t0, t1, t2};
+    Async::Task<std::vector<Async::Task<void>>> allTask = Async::WhenAll(Test::TestQueue2, tasks.begin(), tasks.end());
+    std::vector<Async::Task<void>> completed = allTask.get();
+    
+    assert(completed.size() == tasks.size());
+    assert(count == tasks.size());
+}
+
 
 int main(int argc, const char* argv[])
 {
@@ -190,6 +244,8 @@ int main(int argc, const char* argv[])
     testCreateTask();
     testContinuationTasks();
     testContinuationTasksAfterGet();
+    testWhenAny();
+    testWhenAll();
     
     return 0;
 }

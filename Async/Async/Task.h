@@ -16,21 +16,37 @@ namespace Details
     public:
         typedef std::shared_ptr<Schedulable> Ptr;
         
-        virtual void schedule() = 0;
+        virtual uint32_t getQueueId() const = 0;
+        virtual uint64_t getJobId() const = 0;
+        virtual bool schedule() = 0;
         virtual bool cancel() = 0;
     };
 }
 
 template <typename T>
 class Task
-    : public std::enable_shared_from_this<Task<T>>
 {
 public:
+    typedef std::function<void(Task<T>)> CompletionFunc;
+    
     template <typename F>
     Task(uint32_t queueId, const F& f)
     {
         m_work = std::make_shared<Work>(queueId, f);
         m_work->schedule();
+    }
+    
+    uint32_t addCompletionHandler(const CompletionFunc& handler)
+    {
+        Task<T> thisCopy = *this;
+        return m_work->addCompletionHandler([thisCopy, handler]() {
+            handler(thisCopy);
+        });
+    }
+    
+    bool removeCompletionHandler(uint32_t token)
+    {
+        return m_work->removeCompletionHandler(token);
     }
     
     bool cancel()
@@ -45,16 +61,19 @@ public:
         
     T get() const
     {
+        // if the task has been canceled, this should probably throw an exception
         return m_work->getFuture().get();
     }
 
     void wait() const
     {
+        // if the task has been canceled, this should probably throw an exception
         return m_work->getFuture().wait();
     }
     
     std::shared_future<T> getFuture() const
     {
+        // if the task has been canceled, this should _possibly_ throw an exception
         return m_work->getFuture();
     }
     
@@ -115,6 +134,8 @@ private:
     {
     public:
         typedef std::shared_ptr<Work> Ptr;
+        typedef std::function<void(void)> CompletionFunc;
+        
         
         Work()
         : m_queueId(0)
@@ -123,8 +144,8 @@ private:
         
         template <typename F>
         Work(uint32_t queueId0, const F& f)
-        : m_queueId(queueId0)
-        , m_stateMachine(State_Waiting)
+            : m_queueId(queueId0)
+            , m_stateMachine(State_Waiting)
         {
             m_future = m_promise.get_future().share();
             createWorkFunc(f);
@@ -151,10 +172,11 @@ private:
             
             // Running --(RunEnd)--> Completed
             // causes next work items to be scheduled
-            auto scheduleNexts = [this](State, State, Transition) {
+            auto workCompleted = [this](State, State, Transition) {
+                notifyCompletionHandlers();
                 scheduleNextWork();
             };
-            m_stateMachine.addTransition(State_Running, State_Completed, Transition_RunEnd, scheduleNexts);
+            m_stateMachine.addTransition(State_Running, State_Completed, Transition_RunEnd, workCompleted);
             
             // {Waiting, Scheduled} --(Cancel)--> Canceled
             // cancel work function from being executed
@@ -166,9 +188,20 @@ private:
             m_stateMachine.addTransition(State_Scheduled, State_Canceled, Transition_Cancel, cancelWork);
         }
         
-        virtual void schedule() override
+        uint32_t getQueueId() const override
         {
-            m_stateMachine.executeTransition(Transition_Schedule);
+            return m_jobId >> 32;
+        }
+        
+        uint64_t getJobId() const override
+        {
+            return m_jobId;
+        }
+        
+        virtual bool schedule() override
+        {
+            State newState = m_stateMachine.executeTransition(Transition_Schedule);
+            return (newState == State_Scheduled);
         }
         
         virtual bool cancel() override
@@ -183,15 +216,6 @@ private:
             return (curState == State_Canceled);
         }
         
-        uint64_t getJobId() const
-        {
-            return m_jobId;
-        }
-        
-        uint32_t getQueueId() const
-        {
-            return m_jobId >> 32;
-        }
         
         std::shared_future<T>& getFuture()
         {
@@ -214,6 +238,7 @@ private:
                 }
                 case Work::State_Canceled:
                     // do nothing, work was canceled
+                    // throw an exception here?
                     break;
                 default:
                 {
@@ -226,6 +251,42 @@ private:
             }
             
             return added;
+        }
+        
+        uint32_t addCompletionHandler(const CompletionFunc& handler)
+        {
+            uint32_t token = 0;
+            
+            bool callNow = false;
+            {
+                std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
+                State current = m_stateMachine.getCurrentState();
+                switch (current) {
+                    case State_Completed:
+                        callNow = true;
+                        break;
+                    default:
+                        token = m_nextCompletionHandlerToken++;
+                        m_completionHandlers.insert(std::make_pair(token, handler));
+                        break;
+                }
+            }
+            
+            if (callNow)
+                handler();
+            
+            return token;
+        }
+        
+        bool removeCompletionHandler(uint32_t token)
+        {
+            std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
+            std::map<uint32_t, CompletionFunc>::iterator it = m_completionHandlers.find(token);
+            if (it == m_completionHandlers.end())
+                return false;
+            
+            m_completionHandlers.erase(it);
+            return true;
         }
         
     private:
@@ -256,6 +317,21 @@ private:
             };
         }
         
+        void notifyCompletionHandlers()
+        {
+            std::map<uint32_t, CompletionFunc> completionHandlersCopy;
+            {
+                std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
+                State current = m_stateMachine.getCurrentState();
+                assert(current == Work::State_Completed);
+                completionHandlersCopy = m_completionHandlers;
+                m_completionHandlers.clear();
+            }
+            
+            for (auto it : completionHandlersCopy)
+                it.second();
+        }
+        
         void scheduleNextWork()
         {
             std::vector<typename Details::Schedulable::Ptr> nextWorkCopy;
@@ -278,6 +354,8 @@ private:
         uint64_t m_jobId = 0;
         std::vector<typename Details::Schedulable::Ptr> m_nextWork;
         Util::StateMachineT<State, Transition> m_stateMachine;
+        std::map<uint32_t, CompletionFunc> m_completionHandlers;
+        uint32_t m_nextCompletionHandlerToken = 0;
     };
     
     Task(typename Work::Ptr work)
@@ -302,6 +380,103 @@ template <typename Func>
 auto CreateTask(uint32_t queueId, const Func& f) -> Task<decltype(f())>
 {
     return Task<decltype(f())>(queueId, f);
+}
+
+template <typename Iter>
+auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<decltype(begin->get())>>>
+{
+    typedef Task<decltype(begin->get())> TaskType;
+    typedef std::vector<TaskType> TaskVector;
+    
+    auto f = [begin, end]() {
+        std::mutex mutex;
+        std::condition_variable cond;
+        TaskVector completed;
+        
+        auto completionCallback = [&mutex, &cond, &completed](TaskType task) {
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                completed.push_back(task);
+            }
+            cond.notify_one();
+        };
+        
+        std::vector<uint32_t> tokens;
+        for (Iter it = begin; it != end; ++it)
+        {
+            uint32_t token = it->addCompletionHandler(completionCallback);
+            tokens.push_back(token);
+        }
+        
+        std::unique_lock<std::mutex> lock(mutex);
+        if (completed.size() == 0)
+        {
+            cond.wait(lock, [&completed]() {
+                return completed.size() > 0;
+            });
+        }
+
+        size_t i = 0;
+        for (Iter it = begin; it != end; ++it)
+        {
+            uint32_t token = tokens[i++];
+            it->removeCompletionHandler(token);
+        }
+        
+        return completed;
+    };
+    
+    return CreateTask(queueId, f);
+}
+
+template <typename Iter>
+auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<decltype(begin->get())>>>
+{
+    typedef Task<decltype(begin->get())> TaskType;
+    typedef std::vector<TaskType> TaskVector;
+    
+    auto f = [begin, end]() {
+        std::mutex mutex;
+        std::condition_variable cond;
+        TaskVector completed;
+        
+        auto completionCallback = [&mutex, &cond, &completed](TaskType task) {
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                completed.push_back(task);
+            }
+            cond.notify_one();
+        };
+        
+        uint32_t total = 0;
+        std::vector<uint32_t> tokens;
+        for (Iter it = begin; it != end; ++it)
+        {
+            uint32_t token = it->addCompletionHandler(completionCallback);
+            tokens.push_back(token);
+            ++total;
+        }
+        
+        std::unique_lock<std::mutex> lock(mutex);
+        if (completed.size() < total)
+        {
+            cond.wait(lock, [&completed, total]() {
+                return completed.size() == total;
+            });
+        }
+        
+        size_t i = 0;
+        for (Iter it = begin; it != end; ++it)
+        {
+            uint32_t token = tokens[i++];
+            it->removeCompletionHandler(token);
+        }
+
+        
+        return completed;
+    };
+    
+    return CreateTask(queueId, f);
 }
 
 ASYNC_END
