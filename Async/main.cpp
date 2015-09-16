@@ -126,6 +126,36 @@ void testContinuationTasks()
     assert(y_str == "dlroW olleH");
 }
 
+void testContinuationTasksDifferentTypes()
+{
+    Async::Task<double> f_dbl = Async::CreateTask(Test::TestQueue1, []() {
+        return 444;
+    }).then([](int x) {
+        return 2.0*x + 1;
+    });
+    
+    int y_dbl = f_dbl.get();
+    assert(y_dbl == 889.0);
+    
+    Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
+        return M_PI;
+    }).then([](double x) {
+        return (int)floor(x);
+    });
+    
+    double y_int = f_int.get();
+    assert(y_int == 3);
+    
+    Async::Task<size_t> f_size = Async::CreateTask(Test::TestQueue1, []() -> std::string {
+        return "Hello World";
+    }).then([](const std::string& s) {
+        return s.size();
+    });
+    
+    size_t y_size = f_size.get();
+    assert(y_size == 11);
+}
+
 void testContinuationTasksAfterGet()
 {
     int x = 0;
@@ -284,6 +314,7 @@ int main(int argc, const char* argv[])
     testBasicTasks();
     testCreateTask();
     testContinuationTasks();
+    testContinuationTasksDifferentTypes();
     testContinuationTasksAfterGet();
     testWhenAny();
     testWhenAll();
