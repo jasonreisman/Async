@@ -3,6 +3,7 @@
 #include "Async/Queue.h"
 #include "Util/StateMachineT.h"
 
+#include <algorithm>
 #include <cassert>
 #include <future>
 
@@ -398,7 +399,11 @@ auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
     typedef Task<decltype(begin->get())> TaskType;
     typedef std::vector<TaskType> TaskVector;
     
-    auto f = [begin, end]() {
+    // make a copy of the input
+    TaskVector tasks;
+    std::copy(begin, end, std::back_inserter(tasks));
+    
+    auto f = [tasks]() {
         std::mutex mutex;
         std::condition_variable cond;
         TaskVector completed;
@@ -412,9 +417,9 @@ auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         };
         
         std::vector<uint32_t> tokens;
-        for (Iter it = begin; it != end; ++it)
+        for (auto t : tasks)
         {
-            uint32_t token = it->addCompletionHandler(completionCallback);
+            uint32_t token = t.addCompletionHandler(completionCallback);
             tokens.push_back(token);
         }
         
@@ -427,10 +432,10 @@ auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         }
 
         size_t i = 0;
-        for (Iter it = begin; it != end; ++it)
+        for (auto t : tasks)
         {
             uint32_t token = tokens[i++];
-            it->removeCompletionHandler(token);
+            t.removeCompletionHandler(token);
         }
         
         return completed;
@@ -445,7 +450,11 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
     typedef Task<decltype(begin->get())> TaskType;
     typedef std::vector<TaskType> TaskVector;
     
-    auto f = [begin, end]() {
+    // make a copy of the input
+    TaskVector tasks;
+    std::copy(begin, end, std::back_inserter(tasks));
+
+    auto f = [tasks]() {
         std::mutex mutex;
         std::condition_variable cond;
         TaskVector completed;
@@ -460,9 +469,9 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         
         uint32_t total = 0;
         std::vector<uint32_t> tokens;
-        for (Iter it = begin; it != end; ++it)
+        for (auto t : tasks)
         {
-            uint32_t token = it->addCompletionHandler(completionCallback);
+            uint32_t token = t.addCompletionHandler(completionCallback);
             tokens.push_back(token);
             ++total;
         }
@@ -476,10 +485,10 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         }
         
         size_t i = 0;
-        for (Iter it = begin; it != end; ++it)
+        for (auto t : tasks)
         {
             uint32_t token = tokens[i++];
-            it->removeCompletionHandler(token);
+            t.removeCompletionHandler(token);
         }
 
         return completed;
