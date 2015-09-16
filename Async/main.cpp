@@ -1,5 +1,6 @@
 #include "Async/Task.h"
 
+#include <atomic>
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -213,20 +214,20 @@ void testContinuationTasksAfterGet()
 
 void testWhenAny()
 {
-    int count = 0;
+    std::atomic_int count(0);
     
     Async::Task<void> t0 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         count++;
     });
 
     Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         count++;
     });
 
     Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         count++;
     });
     
@@ -236,24 +237,29 @@ void testWhenAny()
 
     assert(completed.size() > 0);
     assert(count > 0);
+    
+    // make sure all tasks are completed before returning from this test
+    t0.get();
+    t1.get();
+    t2.get();
 }
 
 void testWhenAll()
 {
-    int count = 0;
+    std::atomic_int count(0);
     
     Async::Task<void> t0 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         count++;
     });
     
     Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         count++;
     });
     
     Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         count++;
     });
     
@@ -263,19 +269,24 @@ void testWhenAll()
     
     assert(completed.size() == tasks.size());
     assert(count == tasks.size());
+    
+    // make sure all tasks are completed before returning from this test
+    t0.get();
+    t1.get();
+    t2.get();
 }
 
 void testWhenAnyOperator()
 {
-    int count = 0;
+    std::atomic_int count(0);
     
     Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         count++;
     });
     
     Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         count++;
     });
     
@@ -284,19 +295,23 @@ void testWhenAnyOperator()
     
     assert(completed.size() > 0);
     assert(count > 0);
+    
+    // make sure all tasks are completed before returning from this func
+    t1.get();
+    t2.get();
 }
 
 void testWhenAllOperator()
 {
-    int count = 0;
-    
+    std::atomic_int count(0);
+
     Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         count++;
     });
     
     Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         count++;
     });
     
@@ -305,6 +320,10 @@ void testWhenAllOperator()
     
     assert(completed.size() == 2);
     assert(count == 2);
+    
+    // make sure all tasks are completed before returning from this func
+    t1.get();
+    t2.get();
 }
 
 int main(int argc, const char* argv[])
