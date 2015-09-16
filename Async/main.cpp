@@ -235,6 +235,47 @@ void testWhenAll()
     assert(count == tasks.size());
 }
 
+void testWhenAnyOperator()
+{
+    int count = 0;
+    
+    Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(2));
+        count++;
+    });
+    
+    Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        count++;
+    });
+    
+    Async::Task<std::vector<Async::Task<void>>> anyTask = t1 || t2;
+    std::vector<Async::Task<void>> completed = anyTask.get();
+    
+    assert(completed.size() > 0);
+    assert(count > 0);
+}
+
+void testWhenAllOperator()
+{
+    int count = 0;
+    
+    Async::Task<void> t1 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(2));
+        count++;
+    });
+    
+    Async::Task<void> t2 = Async::CreateTask(Test::TestQueue1, [&count]() {
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        count++;
+    });
+    
+    Async::Task<std::vector<Async::Task<void>>> allTask = t1 && t2;
+    std::vector<Async::Task<void>> completed = allTask.get();
+    
+    assert(completed.size() == 2);
+    assert(count == 2);
+}
 
 int main(int argc, const char* argv[])
 {
