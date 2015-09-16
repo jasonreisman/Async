@@ -287,6 +287,8 @@ int main(int argc, const char* argv[])
     testContinuationTasksAfterGet();
     testWhenAny();
     testWhenAll();
+    testWhenAnyOperator();
+    testWhenAllOperator();
     
     return 0;
 }

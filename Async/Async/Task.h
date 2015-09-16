@@ -482,7 +482,6 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
             it->removeCompletionHandler(token);
         }
 
-        
         return completed;
     };
     
