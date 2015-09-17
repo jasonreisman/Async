@@ -330,6 +330,28 @@ TEST_CASE("when all operator", "[WhenAllOperator]")
     t2.get();
 }
 
+TEST_CASE("large number of tasks", "[LargeNumberOfTasks]")
+{
+    const uint32_t numTasks = 1000;
+    std::atomic_int count(0);
+    
+    auto f = [&count]() {
+        ++count;
+    };
+    
+    std::vector<Async::Task<void>> tasks;
+    for (uint32_t i=0; i<numTasks; i++)
+    {
+        auto t = Async::CreateTask(Test::TestQueue1, f);
+        tasks.push_back(t);
+    }
+    
+    auto allTask = Async::WhenAll(Test::TestQueue1, tasks.begin(), tasks.end());
+    auto completed = allTask.get();
+    REQUIRE(count == numTasks);
+    REQUIRE(completed.size() == numTasks);
+}
+
 int main(int argc, char* const argv[])
 {
     setupQueues();
