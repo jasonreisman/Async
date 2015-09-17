@@ -23,7 +23,7 @@ namespace
 
 Queue::Queue()
 {
-    std::unique_lock<std::mutex> lock(s_queueIdMutex);
+    std::lock_guard<std::mutex> lock(s_queueIdMutex);
     m_queueId = s_nextQueueId;
     s_nextQueueId++;
 }
@@ -46,7 +46,7 @@ Queue::getId()
 bool
 Queue::cancel(uint64_t jobId)
 {
-    std::unique_lock<std::mutex> lock(m_jobsMutex);
+    std::lock_guard<std::mutex> lock(m_jobsMutex);
     
     uint32_t queueId = jobId >> 32;
     if (queueId != m_queueId)
@@ -66,7 +66,13 @@ Queue::cancel(uint64_t jobId)
 bool
 Queue::empty()
 {
-    std::unique_lock<std::mutex> lock(m_jobsMutex);
+    std::lock_guard<std::mutex> lock(m_jobsMutex);
+    return emptyUnprotected();
+}
+
+bool
+Queue::emptyUnprotected()
+{
     return m_jobs.empty();
 }
 
@@ -75,7 +81,7 @@ Queue::runNext()
 {
     Job j;
     {
-        std::unique_lock<std::mutex> lock(m_jobsMutex);
+        std::lock_guard<std::mutex> lock(m_jobsMutex);
         if (m_jobs.empty())
             return false;
         
@@ -86,6 +92,12 @@ Queue::runNext()
     
     j.func();
     return true;
+}
+
+std::mutex&
+Queue::getJobsMutex()
+{
+    return m_jobsMutex;
 }
 
 void
@@ -101,13 +113,13 @@ Queue::newJobAdded()
 
 void registerQueue(Queue::Ptr q)
 {
-    std::unique_lock<std::mutex> lock(s_queuesMutex);
+    std::lock_guard<std::mutex> lock(s_queuesMutex);
     s_queues.insert(std::make_pair(q->getId(), q));
 }
 
 bool unregisterQueue(uint32_t queueId)
 {
-    std::unique_lock<std::mutex> lock(s_queuesMutex);
+    std::lock_guard<std::mutex> lock(s_queuesMutex);
     
     QueueMap::iterator it = s_queues.find(queueId);
     if (it == s_queues.end())
@@ -122,7 +134,7 @@ uint64_t enqueue<VoidFunc>(uint32_t queueId, const VoidFunc& func)
 {
     Queue::Ptr q;
     {
-        std::unique_lock<std::mutex> lock(s_queuesMutex);
+        std::lock_guard<std::mutex> lock(s_queuesMutex);
         QueueMap::iterator it = s_queues.find(queueId);
         if (it == s_queues.end())
             return 0;
@@ -143,7 +155,7 @@ bool cancel(uint64_t jobId)
     
     Queue::Ptr q;
     {
-        std::unique_lock<std::mutex> lock(s_queuesMutex);
+        std::lock_guard<std::mutex> lock(s_queuesMutex);
         QueueMap::iterator it = s_queues.find(queueId);
         if (it == s_queues.end())
             return false;
@@ -184,7 +196,7 @@ void
 ThreadPoolQueue::stop()
 {
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(getJobsMutex());
         if (!m_running)
             return;
         
@@ -215,15 +227,17 @@ ThreadPoolQueue::run()
     while (m_running)
     {
         {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_cond.wait(lock, [this]() {
-                return !empty() || !m_running;
-            });
+            std::unique_lock<std::mutex> lock(getJobsMutex());
+            if (emptyUnprotected())
+            {
+                m_cond.wait(lock, [this]() {
+                    return !emptyUnprotected() || !m_running;
+                });
+            }
         }
         
-        if (m_running)
+        while (m_running && runNext())
         {
-            runNext();
         }
     }
 }
@@ -231,7 +245,6 @@ ThreadPoolQueue::run()
 void
 ThreadPoolQueue::newJobAdded()
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
     m_cond.notify_one();
 }
 

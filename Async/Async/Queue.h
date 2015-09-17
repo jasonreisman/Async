@@ -34,7 +34,7 @@ public:
         jobId += m_nextJobNumber++;
         
         {
-            std::unique_lock<std::mutex> lock(m_jobsMutex);
+            std::lock_guard<std::mutex> lock(m_jobsMutex);
             
             Job job;
             job.id = jobId;
@@ -51,6 +51,10 @@ public:
     bool cancel(uint64_t jobId);
     bool empty();
     bool runNext();
+    
+protected:
+    std::mutex& getJobsMutex();
+    bool emptyUnprotected();
     
 private:
     virtual void newJobAdded();
@@ -106,7 +110,6 @@ private:
     virtual void newJobAdded() override;
     
     bool m_running = true;
-    std::mutex m_mutex;
     std::condition_variable m_cond;
     std::vector<std::thread> m_threads;
 };
