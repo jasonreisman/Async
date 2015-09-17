@@ -1,9 +1,13 @@
 #include "Async/Task.h"
 
+#define CATCH_CONFIG_RUNNER
+#include "catch.hpp"
+
 #include <atomic>
 #include <cassert>
 #include <cmath>
 #include <iostream>
+
 
 namespace Test
 {
@@ -21,7 +25,7 @@ void setupQueues()
     Async::registerQueue(queue2);
 }
 
-void testBasicTasks()
+TEST_CASE("basic task creation", "[Basic]")
 {
     int x = 0;
     Async::Task<void> f_void(Test::TestQueue1, [&x]() {
@@ -29,31 +33,31 @@ void testBasicTasks()
     });
     
     f_void.get();
-    assert(x == 1);
+    REQUIRE(x == 1);
     
     Async::Task<int> f_int(Test::TestQueue1, []() {
         return 444;
     });
     
     int y_int = f_int.get();
-    assert(y_int == 444);
+    REQUIRE(y_int == 444);
     
     Async::Task<double> f_double(Test::TestQueue1, []() {
         return M_PI;
     });
     
     double y_double = f_double.get();
-    assert(fabs(y_double - M_PI) < 1e-8);
+    REQUIRE(fabs(y_double - M_PI) < 1e-8);
     
     Async::Task<std::string> f_str(Test::TestQueue1, []() {
         return "Hello World";
     });
     
     std::string y_str = f_str.get();
-    assert(y_str == "Hello World");
+    REQUIRE(y_str == "Hello World");
 }
 
-void testCreateTask()
+TEST_CASE("task creation with CreateTask", "[BasicCreateTask]")
 {
     int x = 0;
     Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
@@ -61,31 +65,31 @@ void testCreateTask()
     });
     
     f_void.get();
-    assert(x == 1);
+    REQUIRE(x == 1);
     
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
     });
     
     int y_int = f_int.get();
-    assert(y_int == 444);
+    REQUIRE(y_int == 444);
     
     Async::Task<double> f_double = Async::CreateTask(Test::TestQueue1, []() {
         return M_PI;
     });
     
     double y_double = f_double.get();
-    assert(fabs(y_double - M_PI) < 1e-8);
+    REQUIRE(fabs(y_double - M_PI) < 1e-8);
     
     Async::Task<std::string> f_str = Async::CreateTask(Test::TestQueue1, []() -> std::string {
         return "Hello World";
     });
     
     std::string y_str = f_str.get();
-    assert(y_str == "Hello World");
+    REQUIRE(y_str == "Hello World");
 }
 
-void testContinuationTasks()
+TEST_CASE("continuation tasks", "[ContinuationTasks]")
 {
     int x = 0;
     Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
@@ -95,7 +99,7 @@ void testContinuationTasks()
     });
     
     f_void.get();
-    assert(x == 3);
+    REQUIRE(x == 3);
     
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
@@ -104,7 +108,7 @@ void testContinuationTasks()
     });
     
     int y_int = f_int.get();
-    assert(y_int == 889);
+    REQUIRE(y_int == 889);
     
     Async::Task<double> f_double = Async::CreateTask(Test::TestQueue1, []() {
         return M_PI;
@@ -113,7 +117,7 @@ void testContinuationTasks()
     });
     
     double y_double = f_double.get();
-    assert(fabs(y_double - (2*M_PI + 1)) < 1e-8);
+    REQUIRE(fabs(y_double - (2*M_PI + 1)) < 1e-8);
     
     Async::Task<std::string> f_str = Async::CreateTask(Test::TestQueue1, []() -> std::string {
         return "Hello World";
@@ -124,10 +128,10 @@ void testContinuationTasks()
     });
     
     std::string y_str = f_str.get();
-    assert(y_str == "dlroW olleH");
+    REQUIRE(y_str == "dlroW olleH");
 }
 
-void testContinuationTasksDifferentTypes()
+TEST_CASE("continuation tasks of different types", "[ContinuationTasksDifferentTypes]")
 {
     Async::Task<double> f_dbl = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
@@ -136,7 +140,7 @@ void testContinuationTasksDifferentTypes()
     });
     
     int y_dbl = f_dbl.get();
-    assert(y_dbl == 889.0);
+    REQUIRE(y_dbl == 889.0);
     
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return M_PI;
@@ -145,7 +149,7 @@ void testContinuationTasksDifferentTypes()
     });
     
     double y_int = f_int.get();
-    assert(y_int == 3);
+    REQUIRE(y_int == 3);
     
     Async::Task<size_t> f_size = Async::CreateTask(Test::TestQueue1, []() -> std::string {
         return "Hello World";
@@ -154,10 +158,10 @@ void testContinuationTasksDifferentTypes()
     });
     
     size_t y_size = f_size.get();
-    assert(y_size == 11);
+    REQUIRE(y_size == 11);
 }
 
-void testContinuationTasksAfterGet()
+TEST_CASE("continuation tasks after get", "[ContinuationTasksAfterGet]")
 {
     int x = 0;
     Async::Task<void> f_void = Async::CreateTask(Test::TestQueue1, [&x]() {
@@ -170,7 +174,7 @@ void testContinuationTasksAfterGet()
     });
     
     f_void2.get();
-    assert(x == 3);
+    REQUIRE(x == 3);
     
     Async::Task<int> f_int = Async::CreateTask(Test::TestQueue1, []() {
         return 444;
@@ -182,7 +186,7 @@ void testContinuationTasksAfterGet()
     });
     
     int y_int2 = f_int2.get();
-    assert(y_int2 == 889);
+    REQUIRE(y_int2 == 889);
     
     Async::Task<double> f_double = Async::CreateTask(Test::TestQueue1, []() {
         return M_PI;
@@ -194,7 +198,7 @@ void testContinuationTasksAfterGet()
     });
     
     double y_double2 = f_double2.get();
-    assert(fabs(y_double2 - (2*M_PI + 1)) < 1e-8);
+    REQUIRE(fabs(y_double2 - (2*M_PI + 1)) < 1e-8);
 
     
     Async::Task<std::string> f_str = Async::CreateTask(Test::TestQueue1, []() -> std::string {
@@ -209,10 +213,10 @@ void testContinuationTasksAfterGet()
     });
     
     std::string y_str2 = f_str2.get();
-    assert(y_str2 == "dlroW olleH");
+    REQUIRE(y_str2 == "dlroW olleH");
 }
 
-void testWhenAny()
+TEST_CASE("when any", "[WhenAny]")
 {
     std::atomic_int count(0);
     
@@ -235,8 +239,8 @@ void testWhenAny()
     Async::Task<std::vector<Async::Task<void>>> anyTask = Async::WhenAny(Test::TestQueue2, begin(tasks), end(tasks));
     std::vector<Async::Task<void>> completed = anyTask.get();
 
-    assert(completed.size() > 0);
-    assert(count > 0);
+    REQUIRE(completed.size() > 0);
+    REQUIRE(count > 0);
     
     // make sure all tasks are completed before returning from this test
     t0.get();
@@ -244,7 +248,7 @@ void testWhenAny()
     t2.get();
 }
 
-void testWhenAll()
+TEST_CASE("when all", "[WhenAll]")
 {
     std::atomic_int count(0);
     
@@ -267,8 +271,8 @@ void testWhenAll()
     Async::Task<std::vector<Async::Task<void>>> allTask = Async::WhenAll(Test::TestQueue2, begin(tasks), end(tasks));
     std::vector<Async::Task<void>> completed = allTask.get();
     
-    assert(completed.size() == tasks.size());
-    assert(count == tasks.size());
+    REQUIRE(completed.size() == tasks.size());
+    REQUIRE(count == tasks.size());
     
     // make sure all tasks are completed before returning from this test
     t0.get();
@@ -276,7 +280,7 @@ void testWhenAll()
     t2.get();
 }
 
-void testWhenAnyOperator()
+TEST_CASE("when any operator", "[WhenAnyOperator]")
 {
     std::atomic_int count(0);
     
@@ -293,15 +297,15 @@ void testWhenAnyOperator()
     Async::Task<std::vector<Async::Task<void>>> anyTask = t1 || t2;
     std::vector<Async::Task<void>> completed = anyTask.get();
     
-    assert(completed.size() > 0);
-    assert(count > 0);
+    REQUIRE(completed.size() > 0);
+    REQUIRE(count > 0);
     
     // make sure all tasks are completed before returning from this func
     t1.get();
     t2.get();
 }
 
-void testWhenAllOperator()
+TEST_CASE("when all operator", "[WhenAllOperator]")
 {
     std::atomic_int count(0);
 
@@ -318,27 +322,17 @@ void testWhenAllOperator()
     Async::Task<std::vector<Async::Task<void>>> allTask = t1 && t2;
     std::vector<Async::Task<void>> completed = allTask.get();
     
-    assert(completed.size() == 2);
-    assert(count == 2);
+    REQUIRE(completed.size() == 2);
+    REQUIRE(count == 2);
     
     // make sure all tasks are completed before returning from this func
     t1.get();
     t2.get();
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char* const argv[])
 {
     setupQueues();
-    
-    testBasicTasks();
-    testCreateTask();
-    testContinuationTasks();
-    testContinuationTasksDifferentTypes();
-    testContinuationTasksAfterGet();
-    testWhenAny();
-    testWhenAll();
-    testWhenAnyOperator();
-    testWhenAllOperator();
-    
-    return 0;
+    int result = Catch::Session().run(argc, argv);
+    return result;
 }

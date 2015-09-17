@@ -32,6 +32,7 @@
 		961FF1361BA5B27A009CE21B /* Task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Task.h; sourceTree = "<group>"; };
 		961FF1381BA5B27A009CE21B /* Base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Base.h; sourceTree = "<group>"; };
 		961FF1391BA5B27A009CE21B /* StateMachineT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StateMachineT.h; sourceTree = "<group>"; };
+		961FF1731BAA597C009CE21B /* catch.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = catch.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +67,7 @@
 			children = (
 				961FF1321BA5B27A009CE21B /* Async */,
 				961FF1371BA5B27A009CE21B /* Util */,
+				961FF1731BAA597C009CE21B /* catch.hpp */,
 				961FF1121BA5AE9A009CE21B /* main.cpp */,
 			);
 			path = Async;
