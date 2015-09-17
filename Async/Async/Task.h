@@ -278,7 +278,7 @@ private:
                         break;
                     default:
                         token = m_nextCompletionHandlerToken++;
-                        m_completionHandlers.insert(std::make_pair(token, handler));
+                        m_completionHandlers.insert({token, handler});
                         break;
                 }
             }
@@ -292,7 +292,7 @@ private:
         bool removeCompletionHandler(uint32_t token)
         {
             std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
-            std::map<uint32_t, CompletionFunc>::iterator it = m_completionHandlers.find(token);
+            auto it = m_completionHandlers.find(token);
             if (it == m_completionHandlers.end())
                 return false;
             
