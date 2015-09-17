@@ -32,13 +32,8 @@ public:
         if (m_transitions.find(key) != m_transitions.end())
             return false;
         
-        TransitionData data;
-        data.from = from;
-        data.to = to;
-        data.trans = trans;
-        data.effect = effect;
-
-        m_transitions.insert(std::make_pair(key, data));
+        TransitionData data = {from, to, trans, effect, synchronous};
+        m_transitions.insert({key, data});
         return true;
     }
     
@@ -51,7 +46,7 @@ public:
             std::lock_guard<std::mutex> lock(m_mutex);
             
             TransitionKey key(m_current, trans);
-            typename TransitionMap::const_iterator it = m_transitions.find(key);
+            auto it = m_transitions.find(key);
             if (it == m_transitions.end())
                 return m_current;
             
@@ -82,14 +77,13 @@ public:
     
 private:
     
-    class TransitionData
+    struct TransitionData
     {
-    public:
         State from;
         State to;
         Transition trans;
         SideEffect effect;
-        bool synchronous = false;
+        bool synchronous;
     };
     
     typedef std::pair<State, Transition> TransitionKey;

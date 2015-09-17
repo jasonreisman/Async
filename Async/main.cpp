@@ -231,8 +231,8 @@ void testWhenAny()
         count++;
     });
     
-    std::vector<Async::Task<void>> tasks = {t0, t1, t2};
-    Async::Task<std::vector<Async::Task<void>>> anyTask = Async::WhenAny(Test::TestQueue2, tasks.begin(), tasks.end());
+    auto tasks = {t0, t1, t2};
+    Async::Task<std::vector<Async::Task<void>>> anyTask = Async::WhenAny(Test::TestQueue2, begin(tasks), end(tasks));
     std::vector<Async::Task<void>> completed = anyTask.get();
 
     assert(completed.size() > 0);
@@ -263,8 +263,8 @@ void testWhenAll()
         count++;
     });
     
-    std::vector<Async::Task<void>> tasks = {t0, t1, t2};
-    Async::Task<std::vector<Async::Task<void>>> allTask = Async::WhenAll(Test::TestQueue2, tasks.begin(), tasks.end());
+    auto tasks = {t0, t1, t2};
+    Async::Task<std::vector<Async::Task<void>>> allTask = Async::WhenAll(Test::TestQueue2, begin(tasks), end(tasks));
     std::vector<Async::Task<void>> completed = allTask.get();
     
     assert(completed.size() == tasks.size());

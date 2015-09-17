@@ -396,8 +396,8 @@ auto CreateTask(uint32_t queueId, const Func& f) -> Task<decltype(f())>
 template <typename Iter>
 auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<decltype(begin->get())>>>
 {
-    typedef Task<decltype(begin->get())> TaskType;
-    typedef std::vector<TaskType> TaskVector;
+    using TaskType = Task<decltype(begin->get())>;
+    using TaskVector = std::vector<TaskType>;
     
     // make a copy of the input
     TaskVector tasks;
@@ -447,8 +447,8 @@ auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
 template <typename Iter>
 auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<decltype(begin->get())>>>
 {
-    typedef Task<decltype(begin->get())> TaskType;
-    typedef std::vector<TaskType> TaskVector;
+    using TaskType = Task<decltype(begin->get())>;
+    using TaskVector = std::vector<TaskType>;
     
     // make a copy of the input
     TaskVector tasks;
@@ -500,19 +500,15 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
 template <typename T>
 Task<std::vector<Task<T>>> operator||(const Task<T>& a, const Task<T>& b)
 {
-    std::vector<Task<T>> tasks;
-    tasks.push_back(a);
-    tasks.push_back(b);
-    return WhenAny(a.getQueueId(), tasks.begin(), tasks.end());
+    auto tasks = {a,b};
+    return WhenAny(a.getQueueId(), begin(tasks), end(tasks));
 }
 
 template <typename T>
 Task<std::vector<Task<T>>> operator&&(const Task<T>& a, const Task<T>& b)
 {
-    std::vector<Task<T>> tasks;
-    tasks.push_back(a);
-    tasks.push_back(b);
-    return WhenAll(a.getQueueId(), tasks.begin(), tasks.end());
+    auto tasks = {a,b};
+    return WhenAll(a.getQueueId(), begin(tasks), end(tasks));
 }
 
 ASYNC_END
