@@ -424,12 +424,8 @@ auto WhenAny(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         }
         
         std::unique_lock<std::mutex> lock(mutex);
-        if (completed.size() == 0)
-        {
-            cond.wait(lock, [&completed]() {
-                return completed.size() > 0;
-            });
-        }
+        while (completed.size() == 0)
+            cond.wait(lock);
 
         size_t i = 0;
         for (auto t : tasks)
@@ -477,12 +473,8 @@ auto WhenAll(uint32_t queueId, Iter begin, Iter end) -> Task<std::vector<Task<de
         }
         
         std::unique_lock<std::mutex> lock(mutex);
-        if (completed.size() < total)
-        {
-            cond.wait(lock, [&completed, total]() {
-                return completed.size() == total;
-            });
-        }
+        while (completed.size() < total)
+            cond.wait(lock);
         
         size_t i = 0;
         for (auto t : tasks)

@@ -227,18 +227,14 @@ ThreadPoolQueue::run()
     while (m_running)
     {
         {
+            // wait until there's work to do
             std::unique_lock<std::mutex> lock(getJobsMutex());
-            if (emptyUnprotected())
-            {
-                m_cond.wait(lock, [this]() {
-                    return !emptyUnprotected() || !m_running;
-                });
-            }
+            while (m_running && emptyUnprotected())
+                m_cond.wait(lock);
         }
-        
-        while (m_running && runNext())
-        {
-        }
+    
+        // execute any work on the queue
+        while (m_running && runNext()) {}
     }
 }
 
