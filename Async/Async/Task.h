@@ -156,7 +156,7 @@ private:
         template <typename F>
         Work(uint32_t queueId0, const F& f)
             : m_queueId(queueId0)
-            , m_stateMachine(State_Waiting)
+            , m_stateMachine(State::Waiting)
         {
             m_future = m_promise.get_future().share();
             createWorkFunc(f);
@@ -168,18 +168,18 @@ private:
                 // so that "this" is kept alive until after after the lambda is executed (or canceled)
                 Work::Ptr sharedThis = std::dynamic_pointer_cast<Work>(shared_from_this());
                 m_jobId = Async::enqueue(m_queueId, [sharedThis]() {
-                    sharedThis->m_stateMachine.executeTransition(Transition_RunStart);
-                    sharedThis->m_stateMachine.executeTransition(Transition_RunEnd);
+                    sharedThis->m_stateMachine.executeTransition(Transition::RunStart);
+                    sharedThis->m_stateMachine.executeTransition(Transition::RunEnd);
                 });
             };
-            m_stateMachine.addTransition(State_Waiting, State_Scheduled, Transition_Schedule, enqueueFunc);
+            m_stateMachine.addTransition(State::Waiting, State::Scheduled, Transition::Schedule, enqueueFunc);
             
             // Scheduled --(RunStart)--> Running
             // causes work to be run
             auto runWork = [this](State, State, Transition) {
                 m_func();
             };
-            m_stateMachine.addTransition(State_Scheduled, State_Running, Transition_RunStart, runWork);
+            m_stateMachine.addTransition(State::Scheduled, State::Running, Transition::RunStart, runWork);
             
             // Running --(RunEnd)--> Completed
             // causes next work items to be scheduled
@@ -187,7 +187,7 @@ private:
                 notifyCompletionHandlers();
                 scheduleNextWork();
             };
-            m_stateMachine.addTransition(State_Running, State_Completed, Transition_RunEnd, workCompleted);
+            m_stateMachine.addTransition(State::Running, State::Completed, Transition::RunEnd, workCompleted);
             
             // {Waiting, Scheduled} --(Cancel)--> Canceled
             // cancel work function from being executed
@@ -195,8 +195,8 @@ private:
                 Async::cancel(m_jobId);
                 m_jobId = 0;
             };
-            m_stateMachine.addTransition(State_Waiting, State_Canceled, Transition_Cancel, cancelWork);
-            m_stateMachine.addTransition(State_Scheduled, State_Canceled, Transition_Cancel, cancelWork);
+            m_stateMachine.addTransition(State::Waiting, State::Canceled, Transition::Cancel, cancelWork);
+            m_stateMachine.addTransition(State::Scheduled, State::Canceled, Transition::Cancel, cancelWork);
         }
         
         uint32_t getQueueId() const override
@@ -211,20 +211,20 @@ private:
         
         virtual bool schedule() override
         {
-            State newState = m_stateMachine.executeTransition(Transition_Schedule);
-            return (newState == State_Scheduled);
+            State newState = m_stateMachine.executeTransition(Transition::Schedule);
+            return (newState == State::Scheduled);
         }
         
         virtual bool cancel() override
         {
-            State newState = m_stateMachine.executeTransition(Transition_Cancel);
-            return (newState == State_Canceled);
+            State newState = m_stateMachine.executeTransition(Transition::Cancel);
+            return (newState == State::Canceled);
         }
         
         bool isCanceled() const
         {
             State curState = m_stateMachine.getCurrentState();
-            return (curState == State_Canceled);
+            return (curState == State::Canceled);
         }
         
         
@@ -241,13 +241,13 @@ private:
             State current = m_stateMachine.getCurrentState();
             switch (current)
             {
-                case Work::State_Completed:
+                case Work::State::Completed:
                 {
                     next->schedule();
                     added = true;
                     break;
                 }
-                case Work::State_Canceled:
+                case Work::State::Canceled:
                     // do nothing, work was canceled
                     // throw an exception here?
                     break;
@@ -273,7 +273,7 @@ private:
                 std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
                 State current = m_stateMachine.getCurrentState();
                 switch (current) {
-                    case State_Completed:
+                    case State::Completed:
                         callNow = true;
                         break;
                     default:
@@ -301,22 +301,22 @@ private:
         }
         
     private:
-        enum State
+        enum class State
         {
-            State_Waiting,
-            State_Scheduled,
-            State_Running,
-            State_Completed,
-            State_Canceled
+            Waiting,
+            Scheduled,
+            Running,
+            Completed,
+            Canceled
         };
         
-        enum Transition
+        enum class Transition
         {
-            Transition_Schedule,
-            Transition_RunStart,
-            Transition_RunEnd,
-            Transition_Complete,
-            Transition_Cancel
+            Schedule,
+            RunStart,
+            RunEnd,
+            Complete,
+            Cancel
         };
         
         template <typename F>
@@ -334,7 +334,7 @@ private:
             {
                 std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
                 State current = m_stateMachine.getCurrentState();
-                assert(current == Work::State_Completed);
+                assert(current == Work::State::Completed);
                 completionHandlersCopy = m_completionHandlers;
                 m_completionHandlers.clear();
             }
@@ -349,7 +349,7 @@ private:
             {
                 std::lock_guard<std::mutex> lock(m_stateMachine.getMutex());
                 State current = m_stateMachine.getCurrentState();
-                assert(current == Work::State_Completed);
+                assert(current == Work::State::Completed);
                 nextWorkCopy = m_nextWork;
                 m_nextWork.clear();
             }
